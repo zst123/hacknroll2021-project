@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from PIL import Image
+import serial
 import sys
 
 
 # Open up image
-im = Image.open("image.png")
+im = Image.open("image.png" if len(sys.argv) < 2 else sys.argv[1])
 resize_x = 256
 resize_y = 256
 
@@ -52,3 +53,40 @@ template=f'''char image[] = {{
 
 with open('output.h', 'w') as f:
     f.write(template)
+
+
+# Send to microcontroller over serial
+ser = serial.Serial(
+    port=sys.argv[2],
+    baudrate=256000,
+    bytesize=serial.EIGHTBITS,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE)
+print(f"Starting {ser.port} at {ser.baudrate}")
+
+# reset index on MCU
+ser.write(b'R')
+
+# Send array
+print(f"Sending")
+
+for i, line in enumerate(array):
+    payload = ''
+    for item in list(line):
+        payload += hex(item)[2:].upper()
+        payload += '-'
+    ser.write(payload.encode())
+    print(f"Sent {i}")
+
+# reset index on MCU
+ser.write(b'R')
+
+print(f"Done")
+
+
+#print(array)
+#print(len(array))
+#print(len(array[0]))
+
+
+
